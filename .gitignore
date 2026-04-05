@@ -1,0 +1,15 @@
+.env
+.venv
+token.json
+credentials.json
+__pycache__/
+
+# Runtime outputs
+data/
+
+# Private data
+resumes/
+prompts/matching_instructions.md
+
+# Test fixtures containing personal data
+tests/sample_email.html

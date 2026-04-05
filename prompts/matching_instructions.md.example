@@ -1,0 +1,76 @@
+# Job Matching Instructions
+
+The resume is provided in the `<resume>` block.
+
+---
+For every job, in order:
+1. Check the `<job_description>` block. If it contains real JD content, use it and skip to step 3.
+2. If `<job_description>` is empty or says "No job description available.": use the `web_search` tool with query `"{title} {company} [YOUR_LOCATION] job description"`, pick the most relevant result's snippet as the JD text.
+3. Apply the formula below using the JD text. If JD is still unavailable after step 2, make a best-effort score using title, company, and location only — add "(low confidence — JD not found)" to the verdict field.
+
+## Scoring Formula
+`overall = (tech×[TECH_WEIGHT]) + (exp×[EXP_WEIGHT]) + (domain×[DOMAIN_WEIGHT]) + (role×[ROLE_WEIGHT])`
+
+> Weights must sum to 1.0. Adjust to reflect your priorities (e.g. weight `tech` higher if your technical depth is your differentiator).
+
+All dimensions scored 0–10:
+
+| Dim | 9-10 | 7-8 | 5-6 | 3-4 | 0-2 |
+|---|---|---|---|---|---|
+| tech | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] |
+| exp | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] |
+| domain | [YOUR_PRIMARY_DOMAIN] | [YOUR_SECONDARY_DOMAIN] | [ADJACENT_DOMAIN] | [DIFFERENT_DOMAIN] | [UNRELATED] |
+| role | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] | [THRESHOLD_DESCRIPTION] |
+
+> For `exp`, calibrate thresholds against your total years of experience. For `domain`, list your industry preferences from highest to lowest.
+
+## Priority Bands
+Define score thresholds and the action you'll take for each band:
+
+- HIGH (overall ≥ [THRESHOLD]): [YOUR_ACTION, e.g. "Apply within 24–48h"]
+- MEDIUM ([THRESHOLD]–[THRESHOLD]): [YOUR_ACTION]
+- LOW ([THRESHOLD]–[THRESHOLD]): [YOUR_ACTION]
+- SKIP (< [THRESHOLD]): Not recommended
+
+## Red Flags
+Define automatic disqualifiers and score penalties that apply before or after the formula:
+
+- **Auto-disqualify:** [CONDITION_1] · [CONDITION_2] · [CONDITION_3]
+- **−[N] penalty:** [CONDITION, e.g. "vague JD with no clear scope"]
+- **−[N] penalty:** [CONDITION, e.g. "primary stack is one you don't use"]
+
+> Penalties are applied to `overall` after the weighted formula. Cap the final value at 10.0.
+
+## Keyword Bonus (optional)
+After computing `overall`, scan the JD text case-insensitively for domain-specific keywords that signal a strong fit for your niche:
+
+`[KEYWORD_1]` · `[KEYWORD_2]` · `[KEYWORD_3]` · `[KEYWORD_4]` · `[KEYWORD_5]`
+
+- If **1 or more** of these keywords appear in the JD → add **+[BONUS]** to `overall`
+- Apply this bonus **before** determining the rank band
+- Cap the final `overall` at **10.0**
+- If the JD was not found (low-confidence), do **not** apply the bonus
+
+> Add keywords that represent your target niche (industry verticals, certifications, protocols, standards). A bonus of +0.5 is a reasonable starting point.
+
+## Output JSON Schema
+Return a single JSON object with exactly these keys:
+
+```json
+{
+  "score": 7.4,
+  "rank": "MEDIUM",
+  "tech": 8,
+  "exp": 7,
+  "domain": 6,
+  "role": 7,
+  "technical_gaps": ["gap 1", "gap 2", "gap 3"],
+  "verdict": "one sentence: key match or gap reason"
+}
+```
+
+Rules:
+- `score`: float, the computed overall (0–10)
+- `rank`: one of "HIGH", "MEDIUM", "LOW", "SKIP"
+- `technical_gaps`: exactly 3 items
+- If JD is unavailable after web search, make a best-effort estimate from title/company/location and add "(low confidence — JD not found)" to the verdict.
